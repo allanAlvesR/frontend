@@ -1,0 +1,50 @@
+version: '3'
+
+services:
+  api:
+    container_name: api
+    image: node:18-alpine
+    command: sh -c "yarn install && yarn knex migrate:latest && yarn run dev"
+    working_dir: /usr/src/app
+    ports:
+      - "3001:3001"
+    environment:
+      - BACKEND_PORT=3001
+      - DB_HOST=db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=postgres
+      - DB_PORT=5432
+    volumes:
+      - ./backend-nodejs:/usr/src/app:z
+    depends_on:
+      - db
+    links:
+      - db
+      
+  db:
+    container_name: db
+    image: postgres:alpine3.16
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    volumes: 
+      - db:/var/lib/postgresql/data
+
+  frontend:
+    container_name: frontend
+    image: node:18-alpine
+    command: sh -c "yarn install && yarn start"
+    working_dir: /usr/src/app
+    environment:
+      - REACT_APP_API_BASE_URL=http://localhost:3001/
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/usr/src/app:z
+    depends_on:
+      - api
+    links:
+      - api
